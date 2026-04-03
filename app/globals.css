@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS variables ─────────────────────────────────────────────────────────── */
+:root {
+  --radius: 0.375rem;
+  --sidebar-width: 220px;
+
+  --bg-base:    #0d0f11;
+  --bg-card:    #131619;
+  --bg-hover:   #1a1d22;
+  --bg-border:  #222529;
+  --text-primary:   #e8eaf0;
+  --text-muted:     #7c8494;
+  --text-dimmed:    #4a5068;
+  --accent-blue:    #2196f3;
+  --accent-green:   #22c55e;
+  --accent-red:     #ef4444;
+  --accent-amber:   #f59e0b;
+  --accent-purple:  #8b5cf6;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  font-size: 13px;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--bg-border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dimmed); }
+
+/* ── Grid pattern background ─────────────────────────────────────────────── */
+.bg-grid-pattern {
+  background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ── Score color utilities ───────────────────────────────────────────────── */
+.score-flagship   { color: #22c55e; }
+.score-strategic  { color: #2196f3; }
+.score-standard   { color: #f59e0b; }
+.score-watchlist  { color: #f97316; }
+.score-reject     { color: #ef4444; }
+.score-pending    { color: #7c8494; }
+
+/* ── Status pill ─────────────────────────────────────────────────────────── */
+.status-pill {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+.dc-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-border);
+  border-radius: var(--radius);
+}
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.dc-table {
+  @apply w-full text-sm;
+}
+.dc-table th {
+  @apply text-left text-xs uppercase text-[--text-dimmed] font-medium py-2 px-3;
+  border-bottom: 1px solid var(--bg-border);
+}
+.dc-table td {
+  @apply py-2.5 px-3;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.dc-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+/* ── Sidebar nav item ────────────────────────────────────────────────────── */
+.nav-item {
+  @apply flex items-center gap-2.5 px-3 py-2 rounded text-sm text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary] transition-colors;
+}
+.nav-item.active {
+  background: rgba(33,150,243,0.12);
+  color: var(--accent-blue);
+}
+
+/* ── KPI card ────────────────────────────────────────────────────────────── */
+.kpi-card {
+  @apply dc-card p-4 flex flex-col gap-1;
+}
+.kpi-value {
+  @apply text-2xl font-bold tracking-tight text-[--text-primary];
+}
+.kpi-label {
+  @apply text-xs text-[--text-muted] uppercase tracking-wide;
+}
+
+/* ── Button base ─────────────────────────────────────────────────────────── */
+.btn-base {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium
+         transition-colors disabled:opacity-50 disabled:pointer-events-none;
+}
+.btn-primary {
+  @apply btn-base bg-[--accent-blue] text-white hover:bg-blue-600;
+}
+.btn-ghost {
+  @apply btn-base text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary];
+}
+.btn-danger {
+  @apply btn-base bg-[--accent-red]/10 text-[--accent-red] hover:bg-[--accent-red]/20;
+}
+
+/* ── Badge ───────────────────────────────────────────────────────────────── */
+.badge-flagship   { @apply status-pill bg-green-900/30  text-green-400; }
+.badge-strategic  { @apply status-pill bg-blue-900/30   text-blue-400; }
+.badge-standard   { @apply status-pill bg-amber-900/30  text-amber-400; }
+.badge-watchlist  { @apply status-pill bg-orange-900/30 text-orange-400; }
+.badge-reject     { @apply status-pill bg-red-900/30    text-red-400; }
+.badge-pending    { @apply status-pill bg-gray-800      text-gray-400; }
+
+/* ── Input ───────────────────────────────────────────────────────────────── */
+.dc-input {
+  @apply w-full bg-[--bg-hover] border border-[--bg-border] rounded px-3 py-2 text-sm
+         text-[--text-primary] placeholder-[--text-dimmed]
+         focus:outline-none focus:border-[--accent-blue] focus:ring-1 focus:ring-[--accent-blue]/30
+         transition-colors;
+}
+
+/* ── Score ring color stops ──────────────────────────────────────────────── */
+.ring-flagship   { stroke: #22c55e; }
+.ring-strategic  { stroke: #2196f3; }
+.ring-standard   { stroke: #f59e0b; }
+.ring-watchlist  { stroke: #f97316; }
+.ring-reject     { stroke: #ef4444; }
+.ring-pending    { stroke: #374151; }
+
+/* ── Severity badges ─────────────────────────────────────────────────────── */
+.sev-critical { @apply status-pill bg-red-950 text-red-400 border border-red-800/50; }
+.sev-high     { @apply status-pill bg-orange-950 text-orange-400; }
+.sev-medium   { @apply status-pill bg-amber-950 text-amber-400; }
+.sev-low      { @apply status-pill bg-gray-800 text-gray-400; }
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* ── Responsive sidebar ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root { --sidebar-width: 0px; }
+}

@@ -1,0 +1,1234 @@
+// UnyKorn Data Center OS — Complete Prisma Schema
+// Spec: UNYKORN-DataCenter-System-2026.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// USERS & AUTH
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String
+  passwordHash String?
+  role        UserRole @default(ANALYST)
+  isActive    Boolean  @default(true)
+  avatarUrl   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdSites      Site[]             @relation("SiteCreator")
+  ownedTasks        WorkflowTask[]     @relation("TaskOwner")
+  reviewNotes       ReviewNote[]
+  auditLogs         AuditLog[]
+  approvals         ApprovalDecision[]
+  agentRuns         AgentRun[]
+  notifications     Notification[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  ANALYST
+  ENGINEERING
+  POWER_ENGINEER
+  NETWORK_ENGINEER
+  COMPLIANCE
+  FINANCE
+  EXECUTIVE_REVIEWER
+  EXTERNAL_PARTNER
+  AI_AGENT_SUPERVISOR
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SITE — core record linking all subsystem data
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Site {
+  id             String     @id @default(cuid())
+  name           String
+  slug           String     @unique
+  status         SiteStatus @default(INTAKE)
+  stage          SiteStage  @default(SOURCING)
+  siteType       SiteType?
+
+  // ── Geography ──────────────────────────────────────────────────────────────
+  address        String?
+  city           String?
+  state          String?
+  country        String   @default("US")
+  lat            Float?
+  lng            Float?
+  jurisdiction   String?
+  zoning         String?
+  parcelIds      String?
+
+  // ── Site Characteristics ────────────────────────────────────────────────────
+  ownershipStatus OwnershipStatus?
+  totalAcres      Float?
+  laydownAcres    Float?
+  totalSqFt       Float?
+  currentItMW     Float?
+  targetItMW      Float?
+  maxExpandableMW Float?
+  currentPUE      Float?
+  targetPUE       Float?
+  isStandalone    Boolean?
+  isOnCampus      Boolean?
+
+  // ── Source ──────────────────────────────────────────────────────────────────
+  sourceType  SourceType?
+  sourceUrl   String?
+  sourceName  String?
+  brokerName  String?
+  listingDate DateTime?
+
+  // ── Scoring (denormalized from Scorecard for query performance) ─────────────
+  totalScore              Float?
+  recommendation          SiteRecommendation?
+  scorecardId             String?  @unique
+  scorecard               Scorecard? @relation(fields: [scorecardId], references: [id])
+
+  // ── Completeness ────────────────────────────────────────────────────────────
+  completenessScore       Float  @default(0)
+  criticalMissingFields   String?
+
+  // ── Meta ────────────────────────────────────────────────────────────────────
+  createdById  String
+  createdBy    User     @relation("SiteCreator", fields: [createdById], references: [id])
+  priority     SitePriority @default(NORMAL)
+  tags         String[]
+  internalNotes String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // ── Subsystem Relations ─────────────────────────────────────────────────────
+  buildings              Building[]
+  utilities              Utility[]
+  generators             GeneratorPlant[]
+  upsSystems             UPSSystem[]
+  coolingSystems         CoolingSystem[]
+  networkProfiles        NetworkProfile[]
+  fiberRoutes            FiberRoute[]
+  securityProfile        SecurityProfile?
+  complianceProfile      ComplianceProfile?
+  environmentalProfile   EnvironmentalProfile?
+  capitalPlan            CapitalPlan?
+  financialModels        FinancialModel[]
+  jurisdictionProfile    JurisdictionProfile?
+  expansionPlans         ExpansionPlan[]
+
+  // ── People / Docs ───────────────────────────────────────────────────────────
+  contacts      Contact[]
+  attachments   Attachment[]
+
+  // ── Workflow / Intelligence ──────────────────────────────────────────────────
+  extractedFacts    ExtractedFact[]
+  reviewNotes       ReviewNote[]
+  riskFlags         RiskFlag[]
+  tasks             WorkflowTask[]
+  agentRuns         AgentRun[]
+  notifications     Notification[]
+  approvalDecisions ApprovalDecision[]
+
+  // ── Comparisons ─────────────────────────────────────────────────────────────
+  comparisonsA  SiteComparison[] @relation("SiteA")
+  comparisonsB  SiteComparison[] @relation("SiteB")
+
+  @@map("sites")
+}
+
+enum SiteStatus {
+  INTAKE
+  SCREENING
+  IN_REVIEW
+  SHORTLISTED
+  IN_DILIGENCE
+  APPROVED
+  REJECTED
+  WATCHLIST
+  ARCHIVED
+}
+
+enum SiteStage {
+  SOURCING
+  QUALIFICATION
+  INITIAL_REVIEW
+  TECHNICAL_REVIEW
+  FINANCIAL_REVIEW
+  COMPLIANCE_REVIEW
+  EXECUTIVE_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum SiteType {
+  RETROFIT
+  GREENFIELD
+  POWERED_SHELL
+  OPERATING_FACILITY
+  LAND_ONLY
+  CAMPUS_EXPANSION
+  CARRIER_HOTEL
+  INDUSTRIAL
+}
+
+enum OwnershipStatus {
+  OWN
+  LEASE
+  GROUND_LEASE
+  LOI
+  UNDER_CONTRACT
+  MARKETED
+  OFF_MARKET
+}
+
+enum SourceType {
+  SCRAPE
+  BROKER_SUBMISSION
+  MANUAL_ENTRY
+  AGENT_DISCOVERY
+  PARTNER_REFERRAL
+  EMAIL_INTAKE
+  COLD_OUTREACH
+}
+
+enum SitePriority {
+  CRITICAL
+  HIGH
+  NORMAL
+  LOW
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BUILDINGS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Building {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  name                String?
+  yearBuilt           Int?
+  totalSqFt           Float?
+  raisedFloorSqFt     Float?
+  raisedFloorHeightIn Float?
+  officeSqFt          Float?
+  ancillarySqFt       Float?
+  isPurposeBuilt      Boolean?
+  isMultiStory        Boolean?
+  floorLoadingPsf     Float?
+  slabStrength        String?
+  roofCondition       String?
+  ceilingHeightFt     Float?
+  windRatingMph       Float?
+  seismicZone         String?
+  floodZone           String?
+  fireRiskLevel       String?
+  loadingDocks        Int?
+  stagingAreaSqFt     Float?
+  parkingSpaces       Int?
+  expansionPotential  String?
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("buildings")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// POWER & UTILITY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Utility {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  provider                  String?
+  accountNumber             String?
+  serviceVoltageKv          Float?
+  deliveredMW               Float?
+  contractedMW              Float?
+  expandableMW              Float?
+  feedCount                 Int?
+  hasFeedDiversity          Boolean?
+  substationCount           Int?
+  substationProximityMiles  Float?
+  interconnectionStatus     String?
+  energizationDate          DateTime?
+  upgradeRequired           Boolean?
+  upgradeDescription        String?
+  upgradeTimeline           String?
+  gridReliabilityPercent    Float?
+  voltageStabilityPercent   Float?
+  hasBtmGeneration          Boolean?
+  btmCapacityMW             Float?
+  btmSources                String?
+  notes                     String?
+  verifiedAt                DateTime?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  substations Substation[]
+
+  @@map("utilities")
+}
+
+model Substation {
+  id        String  @id @default(cuid())
+  utilityId String
+  utility   Utility @relation(fields: [utilityId], references: [id], onDelete: Cascade)
+
+  name          String?
+  capacityMW    Float?
+  distanceMiles Float?
+  voltageKv     Float?
+  isSinglePoint Boolean?
+  upgradeNeeded Boolean?
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  @@map("substations")
+}
+
+model GeneratorPlant {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  count               Int?
+  fuelType            String?
+  capacityKwEach      Float?
+  redundancyModel     String?
+  autonomyHours       Float?
+  hasRefuelContract   Boolean?
+  testSchedule        String?
+  yearInstalled       Int?
+  estimatedLifeYears  Int?
+  emissionsNotes      String?
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("generator_plants")
+}
+
+model UPSSystem {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  topology              String?
+  manufacturer          String?
+  chemistry             String?
+  capacityKwEach        Float?
+  count                 Int?
+  runtimeMinutes        Float?
+  redundancyModel       String?
+  yearInstalled         Int?
+  replacementCycleYears Int?
+  totalKwBacked         Float?
+  currentKwUtilized     Float?
+  supportedRackDensityKw Float?
+  strandedPowerKw       Float?
+  hasTelemetry          Boolean?
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("ups_systems")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COOLING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model CoolingSystem {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  coolingType             CoolingType?
+  aggregateTons           Float?
+  chilledWaterTons        Float?
+  condenserTons           Float?
+  crahCracCount           Int?
+  redundancyModel         String?
+  isLiquidCoolingReady    Boolean?
+  hasInRowCooling         Boolean?
+  hasRearDoorCooler       Boolean?
+  hasCdu                  Boolean?
+  hasImmersionCooling     Boolean?
+  hasWarmWaterLoop        Boolean?
+  hasHeatReuse            Boolean?
+  maxRackKwSupported      Float?
+  pueDesign               Float?
+  pueAnnual               Float?
+  pueTarget               Float?
+  wueValue                Float?
+  waterSourceRisk         String?
+  waterUseIntensity       Float?
+  notes                   String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("cooling_systems")
+}
+
+enum CoolingType {
+  AIR
+  WATER
+  HYBRID
+  DIRECT_LIQUID
+  IMMERSION_SINGLE_PHASE
+  IMMERSION_TWO_PHASE
+  REAR_DOOR
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NETWORK
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model NetworkProfile {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  carriersOnSite           Int?
+  carriersNearby           Int?
+  hasDarkFiber             Boolean?
+  hasMeetMeRoom            Boolean?
+  hasRouteDiversity        Boolean?
+  aggregateBandwidthTbps   Float?
+  ixProximityMiles         Float?
+  cloudOnRampLatencyMs     Float?
+  crossConnectLeadTimeDays Int?
+  hasWavelengthService     Boolean?
+  carrierNames             String?
+  notes                    String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  fiberRoutes FiberRoute[]
+
+  @@map("network_profiles")
+}
+
+model FiberRoute {
+  id               String  @id @default(cuid())
+  siteId           String
+  site             Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  networkProfileId String?
+  networkProfile   NetworkProfile? @relation(fields: [networkProfileId], references: [id])
+
+  provider      String?
+  routeType     String?
+  isLit         Boolean?
+  bandwidthGbps Float?
+  diverseFrom   String?
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  @@map("fiber_routes")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SECURITY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model SecurityProfile {
+  id     String @id @default(cuid())
+  siteId String @unique
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  hasPerimeterGuards     Boolean?
+  guardsSchedule         String?
+  hasCctvBuilding        Boolean?
+  hasCctvDataCenter      Boolean?
+  cctvRetentionDays      Int?
+  hasMantraps            Boolean?
+  hasBiometrics          Boolean?
+  biometricMethod        String?
+  buildingAuthMethod     String?
+  datacenterAuthMethod   String?
+  hasVisitorMgmt         Boolean?
+  hasSocNoc              Boolean?
+  hasAntiTailgating      Boolean?
+  hasCabinetLocks        Boolean?
+  notes                  String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("security_profiles")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPLIANCE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model ComplianceProfile {
+  id     String @id @default(cuid())
+  siteId String @unique
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  hasSoc1                 Boolean @default(false)
+  hasSoc2                 Boolean @default(false)
+  hasSoc3                 Boolean @default(false)
+  hasIso27001             Boolean @default(false)
+  hasPciDss               Boolean @default(false)
+  hasHipaa                Boolean @default(false)
+  hasFedRamp              Boolean @default(false)
+  hasCjis                 Boolean @default(false)
+  hasIso50001             Boolean @default(false)
+  hasNist                 Boolean @default(false)
+  hasStatemssp            Boolean @default(false)
+  uptimeTier              String?
+  financialInfraSuitable  Boolean?
+  sovereignSuitable       Boolean?
+  digitalAssetSuitable    Boolean?
+  dataResidencyNotes      String?
+  certificationNotes      String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@map("compliance_profiles")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENVIRONMENTAL / ESG
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model EnvironmentalProfile {
+  id     String @id @default(cuid())
+  siteId String @unique
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  renewableEnergyPercent Float?
+  hasPpa                 Boolean?
+  ppaTermYears           Int?
+  ppaPricePerKwh         Float?
+  hasBtmGeneration       Boolean?
+  hasMicrogrid           Boolean?
+  carbonMetricTons       Float?
+  ghgScope1              Float?
+  ghgScope2Market        Float?
+  waterStressLevel       String?
+  floodRisk              String?
+  fireRisk               String?
+  seismicRisk            String?
+  climateRiskNarrative   String?
+  hasEsReporting         Boolean?
+  insuranceComplexity    String?
+  permittingRisk         String?
+  communityRisk          String?
+  notes                  String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("environmental_profiles")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CAPITAL & FINANCE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model CapitalPlan {
+  id     String @id @default(cuid())
+  siteId String @unique
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  totalProjectCostM      Float?
+  siteControlCostM       Float?
+  buildoutCostPerMwM     Float?
+  retrofitCostM          Float?
+  coolingRetrofitCostM   Float?
+  securityUpliftCostM    Float?
+  utilityDepositM        Float?
+  seniorDebtM            Float?
+  mezzDebtM              Float?
+  preferredEquityM       Float?
+  commonEquityM          Float?
+  targetDscr             Float?
+  targetLtv              Float?
+  targetIrrUnlevered     Float?
+  targetIrrLevered       Float?
+  ppaAnnualCostM         Float?
+  gridAnnualCostM        Float?
+  readinessForLenders    String?
+  tokenizationStrategy   String?
+  rwaTokenTicker         String?
+  rwaChain               String?
+  notes                  String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("capital_plans")
+}
+
+model FinancialModel {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  modelName            String
+  scenarioType         String?
+  revenuePerMwAnnualM  Float?
+  noiMarginPercent     Float?
+  ebitdaM              Float?
+  paybackYears         Float?
+  cashOnCashPercent    Float?
+  assumptions          Json?
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("financial_models")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// JURISDICTION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model JurisdictionProfile {
+  id     String @id @default(cuid())
+  siteId String @unique
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  country                  String?
+  state                    String?
+  county                   String?
+  municipality             String?
+  hasTaxAbatement          Boolean?
+  taxAbatementDetails      String?
+  hasSalesTaxExemption     Boolean?
+  hasPropertyTaxExemption  Boolean?
+  enterpriseZone           Boolean?
+  dataCenterIncentive      Boolean?
+  politicalRisk            String?
+  cryptoFriendly           Boolean?
+  financialRegsNotes       String?
+  speStructure             String?
+  notes                    String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@map("jurisdiction_profiles")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXPANSION PLANS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model ExpansionPlan {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  phaseNumber     Int
+  targetMW        Float?
+  additionalSqFt  Float?
+  additionalAcres Float?
+  estimatedCostM  Float?
+  targetDate      DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  @@map("expansion_plans")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONTACTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Contact {
+  id     String  @id @default(cuid())
+  siteId String?
+  site   Site?   @relation(fields: [siteId], references: [id])
+
+  name        String
+  role        String?
+  company     String?
+  phone       String?
+  email       String?
+  contactType ContactType
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("contacts")
+}
+
+enum ContactType {
+  BROKER
+  OWNER
+  UTILITY_CONTACT
+  LEGAL
+  ENGINEER
+  LENDER
+  PARTNER
+  OTHER
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ATTACHMENTS & DOCUMENT PROCESSING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Attachment {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  fileName        String
+  fileType        String
+  fileSizeBytes   Int?
+  storageKey      String
+  description     String?
+  category        AttachmentCategory
+  processingStatus AttachmentStatus @default(PENDING)
+  processingError String?
+  extractedFactsCount Int @default(0)
+  uploadedById    String?
+  uploadedAt      DateTime @default(now())
+
+  extractedFacts ExtractedFact[]
+  agentRuns      AgentRun[]
+
+  @@map("attachments")
+}
+
+enum AttachmentCategory {
+  UTILITY_LETTER
+  LEASE_DOC
+  ENGINEERING_REPORT
+  ONE_LINE_DIAGRAM
+  VENDOR_QUOTE
+  COMPLIANCE_DOC
+  SITE_SURVEY
+  BROKER_PACKAGE
+  ENVIRONMENTAL
+  FINANCIAL
+  PHOTOS
+  ICM_MEMO
+  OTHER
+}
+
+enum AttachmentStatus {
+  PENDING
+  PROCESSING
+  EXTRACTED
+  FAILED
+  SKIPPED
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXTRACTED FACTS (agent-discovered data points with provenance)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model ExtractedFact {
+  id           String  @id @default(cuid())
+  siteId       String
+  site         Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  attachmentId String?
+  attachment   Attachment? @relation(fields: [attachmentId], references: [id])
+  agentRunId   String?
+  agentRun     AgentRun? @relation(fields: [agentRunId], references: [id])
+
+  fieldPath       String
+  fieldLabel      String
+  extractedValue  String
+  confidence      Float
+  isInferred      Boolean @default(false)
+  evidenceSnippet String?
+  sourceType      String?
+  appliedToSite   Boolean @default(false)
+  reviewStatus    FactReviewStatus @default(PENDING)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime @default(now())
+
+  @@map("extracted_facts")
+}
+
+enum FactReviewStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  NEEDS_REVIEW
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// REVIEW NOTES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model ReviewNote {
+  id       String @id @default(cuid())
+  siteId   String
+  site     Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  fieldPath String?
+  section   String?
+  content   String
+  noteType  ReviewNoteType @default(COMMENT)
+  authorId  String
+  author    User  @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("review_notes")
+}
+
+enum ReviewNoteType {
+  COMMENT
+  FLAG
+  QUESTION
+  VERIFICATION
+  CAVEAT
+  REQUIREMENT
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RISK FLAGS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model RiskFlag {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  category       RiskCategory
+  severity       RiskSeverity
+  title          String
+  description    String
+  evidence       String?
+  recommendation String?
+  isAutoGenerated Boolean @default(false)
+  agentRunId      String?
+  isResolved      Boolean @default(false)
+  resolvedAt      DateTime?
+  createdAt       DateTime @default(now())
+
+  @@map("risk_flags")
+}
+
+enum RiskCategory {
+  POWER_UTILITY
+  COOLING_THERMAL
+  NETWORK_CONNECTIVITY
+  STRUCTURAL
+  ENVIRONMENTAL_CLIMATE
+  COMPLIANCE_REGULATORY
+  COMMERCIAL_FINANCIAL
+  OPERATIONAL
+  JURISDICTIONAL
+  LEASE_OWNERSHIP
+  DATA_QUALITY
+  SECURITY
+}
+
+enum RiskSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCORECARD
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Scorecard {
+  id String @id @default(cuid())
+
+  // Component scores (0–100 each)
+  strategicFit            Float?
+  powerExpandability       Float?
+  coolingAiReadiness       Float?
+  networkLatency           Float?
+  resilienceSecurity       Float?
+  complianceSovereignty    Float?
+  operationalMaturity      Float?
+  financialAttractiveness  Float?
+
+  // Composite
+  totalScore       Float?
+  confidenceScore  Float?
+  recommendation   SiteRecommendation?
+
+  // Intelligence
+  rationale             String?
+  keyStrengths          String?
+  keyWeaknesses         String?
+  verifiedFieldCount    Int @default(0)
+  totalFieldCount       Int @default(0)
+  missingCriticalFields String?
+
+  computedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  site Site?
+
+  @@map("scorecards")
+}
+
+enum SiteRecommendation {
+  REJECT
+  WATCHLIST
+  STANDARD_FIT
+  STRATEGIC_FIT
+  FLAGSHIP_FIT
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SOURCING LAYER (market intelligence / scrape pipeline)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model SourceRegistry {
+  id                   String             @id @default(cuid())
+  name                 String
+  sourceType           SourceRegistryType
+  baseUrl              String
+  scrapePattern        String?
+  isActive             Boolean @default(true)
+  scrapeFrequencyHours Int?
+  lastScrapedAt        DateTime?
+  lastSuccessAt        DateTime?
+  totalScraped         Int @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  scrapeJobs ScrapeJob[]
+
+  @@map("source_registries")
+}
+
+enum SourceRegistryType {
+  LISTING_SITE
+  BROKER_PAGE
+  MARKETPLACE
+  UTILITY_PAGE
+  GOVERNMENT_DATA
+  DEVELOPMENT_AUTHORITY
+  CARRIER_HOTEL
+  GIS_DATA
+  MANUAL
+}
+
+model ScrapeJob {
+  id         String    @id @default(cuid())
+  registryId String
+  registry   SourceRegistry @relation(fields: [registryId], references: [id])
+
+  status            ScrapeJobStatus @default(QUEUED)
+  startedAt         DateTime?
+  completedAt       DateTime?
+  error             String?
+  urlsDiscovered    Int @default(0)
+  listingsExtracted Int @default(0)
+  duplicatesFound   Int @default(0)
+  createdAt         DateTime @default(now())
+
+  rawListings RawListing[]
+
+  @@map("scrape_jobs")
+}
+
+enum ScrapeJobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model RawListing {
+  id          String     @id @default(cuid())
+  scrapeJobId String?
+  scrapeJob   ScrapeJob? @relation(fields: [scrapeJobId], references: [id])
+
+  sourceUrl        String
+  sourceType       String?
+  scrapedAt        DateTime @default(now())
+  rawContent       String?
+  status           RawListingStatus @default(PENDING)
+  normalizedSiteId String?
+  extractedData    Json?
+  confidence       Float?
+  createdAt        DateTime @default(now())
+
+  @@map("raw_listings")
+}
+
+enum RawListingStatus {
+  PENDING
+  PROCESSING
+  NORMALIZED
+  DUPLICATE
+  FAILED
+  REJECTED
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// APPROVALS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model ApprovalDecision {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  stage              SiteStage
+  decision           ApprovalStatus
+  rationale          String?
+  conditions         String?
+  unresolvedBlockers String?
+  decidedById        String
+  decidedBy          User    @relation(fields: [decidedById], references: [id])
+  decidedAt          DateTime @default(now())
+  createdAt          DateTime @default(now())
+
+  @@map("approval_decisions")
+}
+
+enum ApprovalStatus {
+  APPROVED
+  REJECTED
+  CONDITIONAL
+  DEFERRED
+  NEEDS_MORE_INFO
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AGENT RUNS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model AgentRun {
+  id           String  @id @default(cuid())
+  siteId       String?
+  site         Site?   @relation(fields: [siteId], references: [id])
+  attachmentId String?
+  attachment   Attachment? @relation(fields: [attachmentId], references: [id])
+
+  agentType       AgentType
+  status          AgentRunStatus @default(QUEUED)
+  inputPayload    Json?
+  outputPayload   Json?
+  summary         String?
+  error           String?
+  confidenceScore Float?
+  factsExtracted  Int @default(0)
+  risksDetected   Int @default(0)
+  triggeredById   String?
+  triggeredBy     User? @relation(fields: [triggeredById], references: [id])
+  startedAt       DateTime?
+  completedAt     DateTime?
+  durationMs      Int?
+  createdAt       DateTime @default(now())
+
+  recommendations AgentRecommendation[]
+  extractedFacts  ExtractedFact[]
+
+  @@map("agent_runs")
+}
+
+enum AgentType {
+  INTAKE
+  DOCUMENT_EXTRACTION
+  VALIDATION
+  POWER_UTILITY
+  COOLING_AI_READINESS
+  NETWORK
+  COMPLIANCE
+  RISK
+  FINANCIAL_MODELING
+  SUMMARY
+  WORKFLOW_ORCHESTRATOR
+  APPROVAL
+  KNOWLEDGE
+  PORTFOLIO_INTELLIGENCE
+  MARKET_SCOUT
+  LISTING_EXTRACTION
+  GEO_ENRICHMENT
+}
+
+enum AgentRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+  AWAITING_REVIEW
+}
+
+model AgentRecommendation {
+  id         String   @id @default(cuid())
+  agentRunId String
+  agentRun   AgentRun @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+
+  category         String
+  recommendation   String
+  confidence       Float
+  evidence         String?
+  isInferred       Boolean @default(false)
+  reviewStatus     RecommendationStatus @default(PENDING)
+  reviewedAt       DateTime?
+  createdAt        DateTime @default(now())
+
+  @@map("agent_recommendations")
+}
+
+enum RecommendationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  NEEDS_REVIEW
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WORKFLOW TASKS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model WorkflowTask {
+  id     String @id @default(cuid())
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  taskType    TaskType
+  priority    TaskPriority @default(MEDIUM)
+  status      TaskStatus   @default(OPEN)
+  ownerId     String?
+  owner       User?  @relation("TaskOwner", fields: [ownerId], references: [id])
+  dueDate     DateTime?
+  slaHours    Int?
+  completedAt DateTime?
+  escalatedAt DateTime?
+  agentRunId  String?
+  dependsOnId String?
+  dependsOn   WorkflowTask?  @relation("TaskDependency", fields: [dependsOnId], references: [id])
+  dependents  WorkflowTask[] @relation("TaskDependency")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("workflow_tasks")
+}
+
+enum TaskType {
+  REVIEW_SECTION
+  UPLOAD_DOCUMENT
+  VALIDATE_DATA
+  AGENT_RUN
+  FOLLOW_UP_BROKER
+  ESCALATE
+  APPROVE
+  TECHNICAL_REVIEW
+  LEGAL_REVIEW
+  FINANCIAL_REVIEW
+  COMPLIANCE_REVIEW
+  CUSTOM
+}
+
+enum TaskPriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum TaskStatus {
+  OPEN
+  IN_PROGRESS
+  BLOCKED
+  COMPLETED
+  CANCELLED
+  ESCALATED
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  siteId String?
+  site   Site?  @relation(fields: [siteId], references: [id])
+
+  title     String
+  body      String?
+  type      NotificationType
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  actionUrl String?
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_DUE
+  TASK_OVERDUE
+  AGENT_COMPLETE
+  RISK_DETECTED
+  APPROVAL_REQUIRED
+  SITE_UPDATED
+  DOCUMENT_UPLOADED
+  SYSTEM
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUDIT LOG
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model AuditLog {
+  id      String  @id @default(cuid())
+  userId  String?
+  user    User?   @relation(fields: [userId], references: [id])
+  siteId  String?
+
+  action     String
+  entityType String
+  entityId   String
+  changes    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SITE COMPARISONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model SiteComparison {
+  id      String @id @default(cuid())
+  name    String?
+  siteAId String
+  siteA   Site   @relation("SiteA", fields: [siteAId], references: [id])
+  siteBId String
+  siteB   Site   @relation("SiteB", fields: [siteBId], references: [id])
+
+  comparisonData Json?
+  notes          String?
+  createdById    String?
+  createdAt      DateTime @default(now())
+
+  @@map("site_comparisons")
+}
