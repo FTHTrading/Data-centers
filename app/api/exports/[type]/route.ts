@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { generateExecutivePdf, generateTechnicalPdf } from '@/services/exports/pdf'
+import { generateExecutivePdf, generateTechnicalPdf, generateDCGuidePdf } from '@/services/exports/pdf'
 import { generateExcelWorkbook } from '@/services/exports/xlsx'
 
 export async function GET(
@@ -11,6 +11,19 @@ export async function GET(
 ) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { type } = params
+
+  // DC Guide PDF does not require a siteId
+  if (type === 'dc-guide') {
+    const buf = generateDCGuidePdf()
+    return new NextResponse(buf as unknown as BodyInit, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="UnyKorn-DC-Institutional-Playbook.pdf"',
+      },
+    })
+  }
 
   const siteId = req.nextUrl.searchParams.get('siteId')
   if (!siteId) return NextResponse.json({ error: 'siteId required' }, { status: 400 })
@@ -38,8 +51,6 @@ export async function GET(
   })
 
   if (!site) return NextResponse.json({ error: 'Site not found' }, { status: 404 })
-
-  const { type } = params
 
   if (type === 'json') {
     return NextResponse.json({ data: site }, {

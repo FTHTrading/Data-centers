@@ -117,7 +117,12 @@ body {
   @apply btn-base text-[--text-muted] hover:bg-[--bg-hover] hover:text-[--text-primary];
 }
 .btn-danger {
-  @apply btn-base bg-[--accent-red]/10 text-[--accent-red] hover:bg-[--accent-red]/20;
+  @apply btn-base;
+  background-color: rgba(239, 68, 68, 0.10);
+  color: var(--accent-red);
+}
+.btn-danger:hover {
+  background-color: rgba(239, 68, 68, 0.20);
 }
 
 /* ── Badge ───────────────────────────────────────────────────────────────── */
@@ -132,7 +137,7 @@ body {
 .dc-input {
   @apply w-full bg-[--bg-hover] border border-[--bg-border] rounded px-3 py-2 text-sm
          text-[--text-primary] placeholder-[--text-dimmed]
-         focus:outline-none focus:border-[--accent-blue] focus:ring-1 focus:ring-[--accent-blue]/30
+         focus:outline-none focus:border-[--accent-blue] focus:ring-1 focus:ring-blue-500/30
          transition-colors;
 }
 

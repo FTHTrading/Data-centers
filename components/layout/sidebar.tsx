@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
   LayoutDashboard, Database, Radio, Users, CheckSquare,
-  FileText, Search, BookOpen, Settings, List, ChevronRight,
+  FileText, Search, BookOpen, Settings, List, ChevronRight, GraduationCap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -16,6 +16,7 @@ const NAV = [
   { label: 'Agents',     href: '/dashboard/agents',   icon: Radio },
   { label: 'Approvals',  href: '/dashboard/approvals',icon: CheckSquare },
   { label: 'Reports',    href: '/dashboard/reports',  icon: FileText },
+  { label: 'DC Guide',   href: '/dashboard/learn',    icon: GraduationCap },
   null,
   { label: 'Knowledge',  href: '/dashboard/knowledge',icon: BookOpen },
   { label: 'Audit Log',  href: '/dashboard/audit',    icon: List },
