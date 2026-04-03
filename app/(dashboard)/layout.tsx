@@ -1,14 +1,9 @@
-import { redirect } from 'next/navigation'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { AdvisorChat } from '@/components/ai/AdvisorChat'
+import { AudioControlBar } from '@/components/audio/AudioControlBar'
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await getServerSession(authOptions)
-  if (!session) redirect('/login')
-
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[--bg-base]">
       <Sidebar />
@@ -19,6 +14,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </main>
       </div>
       <AdvisorChat />
+      <AudioControlBar />
     </div>
   )
 }

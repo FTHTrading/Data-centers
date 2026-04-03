@@ -179,10 +179,10 @@ export const QUAL_META: Record<QualLevel, { label: string; color: string; descri
 }
 
 export const REDIRECT_RESOURCES = [
-  { label: 'Market Overview',     href: '/dashboard/learn',            section: 'market'  },
-  { label: 'Scoring Framework',   href: '/dashboard/learn',            section: 'scoring' },
-  { label: 'Power Infrastructure',href: '/dashboard/learn',            section: 'power'   },
-  { label: 'Capital Stack',       href: '/dashboard/learn',            section: 'capital' },
-  { label: 'Due Diligence Guide', href: '/dashboard/learn',            section: 'dd'      },
+  { label: 'Market Overview',     href: '/learn',            section: 'market'  },
+  { label: 'Scoring Framework',   href: '/learn',            section: 'scoring' },
+  { label: 'Power Infrastructure',href: '/learn',            section: 'power'   },
+  { label: 'Capital Stack',       href: '/learn',            section: 'capital' },
+  { label: 'Due Diligence Guide', href: '/learn',            section: 'dd'      },
   { label: 'Download Playbook',   href: '/api/exports/dc-guide',       section: 'pdf'     },
 ]

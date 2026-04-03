@@ -49,7 +49,7 @@ export default async function AuditPage() {
                 <td className="text-xs text-[--text-muted]">{log.entityType}</td>
                 <td className="text-xs">
                   {log.siteId ? (
-                    <a href={`/dashboard/sites/${log.siteId}`} className="text-[--accent-blue] hover:underline">
+                    <a href={`/sites/${log.siteId}`} className="text-[--accent-blue] hover:underline">
                       {log.siteId.slice(0, 8)}
                     </a>
                   ) : '—'}

@@ -75,7 +75,7 @@ export function PipelineTable({ rows, showRank = true }: PipelineTableProps) {
               )}
               <td>
                 <Link
-                  href={`/dashboard/sites/${row.id}`}
+                  href={`/sites/${row.id}`}
                   className="text-white hover:text-[var(--accent-blue)] transition-colors font-medium"
                 >
                   {row.name ?? row.id.slice(0, 8)}

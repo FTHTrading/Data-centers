@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { z } from 'zod'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { authOptions } from '@/lib/auth'
 
 const CreateSiteSchema = z.object({
   name:             z.string().min(1),
@@ -32,8 +32,9 @@ const ListQuerySchema = z.object({
 })
 
 export async function GET(req: NextRequest) {
+
   const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const params = Object.fromEntries(req.nextUrl.searchParams.entries())
   const query = ListQuerySchema.parse(params)
@@ -80,8 +81,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+
   const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: unknown
   try {
@@ -104,7 +106,7 @@ export async function POST(req: NextRequest) {
       ownershipStatus: siteData.ownershipStatus as any,
       stage:           'SOURCING',
       status:          'INTAKE',
-      createdById:     (session.user as any).id,
+      createdById:     (session.user as { id: string }).id,
     } as any,
     select: { id: true, name: true, stage: true },
   })
@@ -120,7 +122,7 @@ export async function POST(req: NextRequest) {
   // Audit log
   await db.auditLog.create({
     data: {
-      userId:     (session.user as any).id,
+      userId:     (session.user as { id: string }).id,
       siteId:     site.id,
       action:     'SITE_CREATE',
       entityType: 'Site',

@@ -30,23 +30,30 @@ You will receive an acknowledgement within **48 hours** and a full response with
 ## Security Architecture
 
 ### Authentication
-- All routes require `getServerSession(authOptions)` — no unauthenticated mutations possible
+- All API routes protected with `getServerSession(authOptions)` — 401 returned before any logic executes on unauthenticated requests
 - Passwords hashed with **bcrypt** at 12 salt rounds
 - JWT sessions with configurable expiry (default 24h)
 - No persistent refresh tokens stored in DB
 
 ### Authorization
-- Role-based: `ADMIN | ANALYST | VIEWER`
+- Role-based: `ADMIN | ANALYST | VIEWER` (and domain-specific roles)
 - Roles enforced at both API route and UI component level
 - `createdById` ownership tracking on all Site records
+- All `AuditLog` entries record the real authenticated `userId` (never hardcoded)
 
 ### Input Validation
 - All API route bodies validated with **Zod** schemas before processing
+- `PATCH /api/sites/[id]` uses a strict allowlist schema — mass-assignment of system fields (score, createdById, slug, etc.) is impossible
 - Prisma parameterized queries — SQL injection impossible by construction
 
 ### Output Security
 - React/Next.js escapes all rendered content — XSS prevented by default
 - API responses never expose raw DB errors to clients (logged server-side only)
+
+### AI Chat Endpoint
+- `isPublic` mode is determined **server-side** from the session — never from the client request body
+- Unauthenticated (public) requests are rate-limited at 30 req/min per IP
+- All client-supplied messages are filtered to `user`/`assistant` roles and capped at 2,000 chars each to prevent prompt injection
 
 ### File Handling
 - Uploaded files stored under `FILE_STORAGE_PATH` with sanitized `storageKey` (UUID-based)

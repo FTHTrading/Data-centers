@@ -37,7 +37,7 @@ export default function NewSitePage() {
       return
     }
     const data = await res.json()
-    router.push(`/dashboard/sites/${data.data.id}`)
+    router.push(`/sites/${data.data.id}`)
   }
 
   return (

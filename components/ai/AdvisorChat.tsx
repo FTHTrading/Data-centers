@@ -141,7 +141,7 @@ export function AdvisorChat({ isPublic = false, defaultOpen = false }: AdvisorCh
                     </p>
                   </div>
                   <Link
-                    href="/dashboard/learn"
+                    href="/learn"
                     className="text-[11px] text-[--accent-blue] hover:underline flex items-center gap-1"
                   >
                     Browse the DC Guide instead <ExternalLink size={10} />

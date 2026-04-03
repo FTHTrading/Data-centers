@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { z } from 'zod'
+import { authOptions } from '@/lib/auth'
 
 const RunSchema = z.object({
   siteId:       z.string().uuid(),
@@ -13,8 +13,9 @@ const RunSchema = z.object({
 })
 
 export async function POST(req: NextRequest) {
+
   const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: unknown
   try {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { siteId, agentType, attachmentId } = parsed.data
-  const userId = (session.user as any).id
+  const userId = (session.user as { id: string }).id
 
   try {
     let agent

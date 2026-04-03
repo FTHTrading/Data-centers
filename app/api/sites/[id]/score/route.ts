@@ -4,8 +4,9 @@ import { authOptions } from '@/lib/auth'
 import { orchestrator } from '@/services/agents/orchestrator'
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+
   const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     await orchestrator.computeAndSaveScorecard(params.id)

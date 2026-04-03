@@ -59,7 +59,7 @@ export default async function SitePage({ params }: { params: { id: string } }) {
     <div className="space-y-5 max-w-7xl">
       {/* Breadcrumb */}
       <nav className="text-xs text-[--text-muted] flex items-center gap-1.5">
-        <Link href="/dashboard/pipeline" className="hover:text-[--accent-blue]">Pipeline</Link>
+        <Link href="/pipeline" className="hover:text-[--accent-blue]">Pipeline</Link>
         <span>/</span>
         <span className="text-[--text-primary]">{site.name}</span>
       </nav>
@@ -109,10 +109,13 @@ export default async function SitePage({ params }: { params: { id: string } }) {
 
         {/* Actions */}
         <div className="flex gap-2">
+          <Link href={`/sites/${site.id}/edit`} className="btn-primary text-xs">
+            Edit Data
+          </Link>
           <form action={`/api/sites/${site.id}/score`} method="POST">
-            <button type="submit" className="btn-primary text-xs">Recompute Score</button>
+            <button type="submit" className="btn-ghost text-xs">Recompute Score</button>
           </form>
-          <Link href={`/dashboard/reports?siteId=${site.id}`} className="btn-ghost text-xs">
+          <Link href={`/reports?siteId=${site.id}`} className="btn-ghost text-xs">
             Export
           </Link>
         </div>

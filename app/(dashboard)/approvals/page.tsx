@@ -58,7 +58,7 @@ const overdueTasks = site.tasks.filter(
             <div key={site.id} className="dc-card p-4 space-y-3">
               <div className="flex items-start gap-3">
                 <div className="flex-1">
-                  <Link href={`/dashboard/sites/${site.id}`} className="text-sm font-bold text-[--text-primary] hover:text-[--accent-blue]">
+                  <Link href={`/sites/${site.id}`} className="text-sm font-bold text-[--text-primary] hover:text-[--accent-blue]">
                     {site.name}
                   </Link>
                   <div className="text-xs text-[--text-muted] mt-0.5">

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { authOptions } from '@/lib/auth'
 import { generateExecutivePdf, generateTechnicalPdf, generateDCGuidePdf } from '@/services/exports/pdf'
 import { generateExcelWorkbook } from '@/services/exports/xlsx'
 
@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: { type: string } }
 ) {
   const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { type } = params
 

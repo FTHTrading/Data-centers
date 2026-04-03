@@ -24,7 +24,7 @@ export default function LoginPage() {
     if (res?.error) {
       setError('Invalid credentials. Check email and password.')
     } else {
-      router.push('/dashboard')
+      router.push('/')
     }
   }
 

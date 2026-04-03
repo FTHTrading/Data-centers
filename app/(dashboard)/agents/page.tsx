@@ -83,7 +83,7 @@ export default async function AgentsPage() {
                 <td className="text-xs text-[--text-primary]">{r.agentType.replace(/_/g, ' ')}</td>
                 <td>
                   {r.site ? (
-                    <Link href={`/dashboard/sites/${r.site.id}`} className="text-xs text-[--accent-blue] hover:underline">
+                    <Link href={`/sites/${r.site.id}`} className="text-xs text-[--accent-blue] hover:underline">
                       {r.site.name}
                     </Link>
                   ) : <span className="text-[--text-dimmed]">—</span>}

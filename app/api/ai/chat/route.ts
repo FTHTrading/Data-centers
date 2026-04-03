@@ -65,7 +65,7 @@ RULES
 — Plain text only — no markdown, no bullets, no headers.
 — Be honest. This space destroys unprepared capital. A redirect is a kindness.`
 
-// Simple in-memory rate limiter for public endpoint
+// Simple in-memory rate limiter for unauthenticated (public) requests
 const rateLimitMap = new Map<string, { count: number; reset: number }>()
 function checkRateLimit(ip: string, limit = 30, windowMs = 60_000): boolean {
   const now = Date.now()
@@ -80,14 +80,14 @@ function checkRateLimit(ip: string, limit = 30, windowMs = 60_000): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const { messages, isPublic } = await req.json()
+  // Determine public/private from the server-side session — never trust the client
+  const session = await getServerSession(authOptions)
+  const isPublic = !session?.user
 
-  // Auth check for private (dashboard) mode
-  if (!isPublic) {
-    const session = await getServerSession(authOptions)
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  } else {
-    // Rate limit public requests by IP
+  const { messages } = await req.json()
+
+  // Rate limit unauthenticated (public) requests by IP
+  if (isPublic) {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
     if (!checkRateLimit(ip, 30, 60_000)) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })

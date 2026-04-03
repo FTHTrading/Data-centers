@@ -30,7 +30,7 @@ export default async function PipelinePage() {
           <p className="text-xs text-[--text-muted]">{sites.length} sites across all stages</p>
         </div>
         <div className="ml-auto flex gap-2">
-          <Link href="/dashboard/sites/new" className="btn-primary text-xs">
+          <Link href="/sites/new" className="btn-primary text-xs">
             + New Site
           </Link>
         </div>
@@ -67,7 +67,7 @@ export default async function PipelinePage() {
                 <tr key={site.id}>
                   <td className="text-[--text-dimmed] text-xs">{i + 1}</td>
                   <td>
-                    <Link href={`/dashboard/sites/${site.id}`} className="text-[--text-primary] hover:text-[--accent-blue] font-medium">
+                    <Link href={`/sites/${site.id}`} className="text-[--text-primary] hover:text-[--accent-blue] font-medium">
                       {site.name}
                     </Link>
                     <span className="text-[--text-dimmed] text-xs ml-1.5">{site.city}, {site.state}</span>

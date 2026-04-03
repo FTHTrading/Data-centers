@@ -87,14 +87,14 @@ export default async function DashboardPage() {
                 <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${t.status === 'ESCALATED' ? 'bg-red-500' : 'bg-amber-400'}`} />
                 <div className="min-w-0">
                   <div className="text-xs text-[--text-primary] truncate">{t.title}</div>
-                  <Link href={`/dashboard/sites/${t.site?.id}`} className="text-[10px] text-[--accent-blue] hover:underline">
+                  <Link href={`/sites/${t.site?.id}`} className="text-[10px] text-[--accent-blue] hover:underline">
                     {t.site?.name}
                   </Link>
                 </div>
               </div>
             ))}
           </div>
-          <Link href="/dashboard/approvals" className="block mt-3 text-xs text-[--accent-blue] hover:underline">
+          <Link href="/approvals" className="block mt-3 text-xs text-[--accent-blue] hover:underline">
             View all tasks →
           </Link>
         </div>
@@ -106,7 +106,7 @@ export default async function DashboardPage() {
           <h2 className="text-xs font-semibold text-[--text-muted] uppercase tracking-wide flex-1">
             Top Ranked Sites
           </h2>
-          <Link href="/dashboard/pipeline" className="text-xs text-[--accent-blue] hover:underline">
+          <Link href="/pipeline" className="text-xs text-[--accent-blue] hover:underline">
             Full pipeline →
           </Link>
         </div>
@@ -125,7 +125,7 @@ export default async function DashboardPage() {
             {sites.slice(0, 8).map(site => (
               <tr key={site.id}>
                 <td>
-                  <Link href={`/dashboard/sites/${site.id}`} className="text-[--text-primary] hover:text-[--accent-blue]">
+                  <Link href={`/sites/${site.id}`} className="text-[--text-primary] hover:text-[--accent-blue]">
                     {site.name}
                   </Link>
                   <span className="text-[--text-dimmed] text-xs ml-1.5">{site.city}, {site.state}</span>

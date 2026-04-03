@@ -5,22 +5,27 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Database, Radio, Users, CheckSquare,
   FileText, Search, BookOpen, Settings, List, ChevronRight, GraduationCap,
+  Server, Download, Package,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV = [
-  { label: 'Dashboard',  href: '/dashboard',          icon: LayoutDashboard },
-  { label: 'Pipeline',   href: '/dashboard/pipeline', icon: List },
-  { label: 'Sourcing',   href: '/dashboard/sourcing', icon: Search },
-  null, // divider
-  { label: 'Agents',     href: '/dashboard/agents',   icon: Radio },
-  { label: 'Approvals',  href: '/dashboard/approvals',icon: CheckSquare },
-  { label: 'Reports',    href: '/dashboard/reports',  icon: FileText },
-  { label: 'DC Guide',   href: '/dashboard/learn',    icon: GraduationCap },
+  { label: 'Dashboard',    href: '/',               icon: LayoutDashboard },
+  { label: 'Pipeline',     href: '/pipeline',        icon: List },
+  { label: 'Sourcing',     href: '/sourcing',        icon: Search },
   null,
-  { label: 'Knowledge',  href: '/dashboard/knowledge',icon: BookOpen },
-  { label: 'Audit Log',  href: '/dashboard/audit',    icon: List },
-  { label: 'Settings',   href: '/dashboard/settings', icon: Settings },
+  { label: 'Data Centers', href: '/data-centers',    icon: Server },
+  { label: 'Documents',    href: '/documents',       icon: FileText },
+  { label: 'Resources',    href: '/resources',       icon: Package },
+  null,
+  { label: 'Agents',       href: '/agents',          icon: Radio },
+  { label: 'Approvals',    href: '/approvals',       icon: CheckSquare },
+  { label: 'Reports',      href: '/reports',         icon: Database },
+  { label: 'DC Guide',     href: '/learn',           icon: GraduationCap },
+  null,
+  { label: 'Knowledge',    href: '/knowledge',       icon: BookOpen },
+  { label: 'Audit Log',    href: '/audit',           icon: List },
+  { label: 'Settings',     href: '/settings',        icon: Settings },
 ]
 
 export function Sidebar() {
@@ -41,7 +46,7 @@ export function Sidebar() {
             return <div key={i} className="my-2 border-t border-[--bg-border]" />
           }
           const Icon = item.icon
-          const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+          const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
           return (
             <Link key={item.href} href={item.href} className={cn('nav-item', active && 'active')}>
               <Icon size={15} />

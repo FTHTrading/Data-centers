@@ -90,7 +90,7 @@ export default async function ComparePage({
             Select two sites to compare scoring across all categories.
           </p>
         </div>
-        <Link href="/dashboard/pipeline" className="btn-ghost text-sm">
+        <Link href="/pipeline" className="btn-ghost text-sm">
           ← Pipeline
         </Link>
       </div>
@@ -131,7 +131,7 @@ export default async function ComparePage({
             {[siteA, siteB].map((site, i) => (
               <div key={i} className="p-4 border-r border-[var(--bg-border)] last:border-r-0">
                 <Link
-                  href={`/dashboard/sites/${site.id}`}
+                  href={`/sites/${site.id}`}
                   className="font-semibold text-white hover:text-[var(--accent-blue)] transition-colors"
                 >
                   {site.name ?? site.id}

@@ -57,7 +57,7 @@ export function AgentCard({ run, showSite = false }: AgentCardProps) {
 
       {showSite && run.site && (
         <Link
-          href={`/dashboard/sites/${run.site.id}`}
+          href={`/sites/${run.site.id}`}
           className="text-xs text-[var(--accent-blue)] hover:underline"
         >
           {run.site.name ?? run.site.id.slice(0, 8)}
